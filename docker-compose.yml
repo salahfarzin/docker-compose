@@ -1,0 +1,88 @@
+version: '3'
+
+services:
+  php:
+    build:
+      args:
+        user: user
+        uid: 1000
+      context: .
+      dockerfile: ./docker/Dockerfile
+    container_name: php
+    working_dir: /var/www/
+    environment:
+      PHP_INI_SCAN_DIR: "/usr/local/etc/php/custom.d:/usr/local/etc/php/conf.d"
+      XDEBUG_CONFIG: remote_host=host.docker.internal
+    volumes:
+      - ./:/var/www/
+      - ./docker/php-ini:/usr/local/etc/php/custom.d
+    ports:
+      - "9000:9000"
+    networks:
+      - laravel
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    ports:
+      - "8088:80"
+    volumes:
+      - ./:/var/www/
+      - ./docker/nginx:/etc/nginx/conf.d/
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - laravel
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: always
+    tty: true
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - laravel
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    ports:
+      - 8081:80
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+    depends_on:
+      - mysql
+    volumes:
+      - ./docker/phpmyadmin:/var/www/phpmyadmin
+    networks:
+      - laravel
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    volumes:
+      - ./docker/redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - laravel
+
+networks:
+  laravel:
+    driver: bridge
+volumes:
+  mysqldata:
+    driver: local
