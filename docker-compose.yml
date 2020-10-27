@@ -1,31 +1,11 @@
 version: '3'
 
 services:
-  php:
-    build:
-      args:
-        user: user
-        uid: 1000
-      context: .
-      dockerfile: ./docker/Dockerfile
-    container_name: php
-    working_dir: /var/www/
-    environment:
-      PHP_INI_SCAN_DIR: "/usr/local/etc/php/custom.d:/usr/local/etc/php/conf.d"
-      XDEBUG_CONFIG: remote_host=host.docker.internal
-    volumes:
-      - ./:/var/www/
-      - ./docker/php-ini:/usr/local/etc/php/custom.d
-    ports:
-      - "9000:9000"
-    networks:
-      - laravel
-
   nginx:
     image: nginx:stable-alpine
     container_name: nginx
     ports:
-      - "8088:80"
+      - "80:80"
     volumes:
       - ./:/var/www/
       - ./docker/nginx:/etc/nginx/conf.d/
@@ -33,7 +13,27 @@ services:
       - php
       - mysql
     networks:
-      - laravel
+      - shared
+
+  php:
+    build:
+      args:
+        user: salah
+        uid: 1000
+      context: .
+      dockerfile: ./docker/Dockerfile
+    container_name: php
+    working_dir: /var/www/
+    environment:
+      PHP_INI_SCAN_DIR: "/usr/local/etc/php/custom.d:/usr/local/etc/php/conf.d"
+      #XDEBUG_CONFIG: remote_host=192.168.122.1
+    volumes:
+      - ./:/var/www/
+      - ./docker/php-ini:/usr/local/etc/php/custom.d
+    ports:
+      - "9000:9000"
+    networks:
+      - shared
 
   mysql:
     image: mysql:latest
@@ -47,18 +47,15 @@ services:
       - ./docker/mysql:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: huU96Cm_aMa.rt1EIx
     networks:
-      - laravel
-
+      - shared
+      
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
     ports:
-      - 8081:80
+      - 8086:80
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=mysql
@@ -67,7 +64,7 @@ services:
     volumes:
       - ./docker/phpmyadmin:/var/www/phpmyadmin
     networks:
-      - laravel
+      - shared
 
   redis:
     image: redis:latest
@@ -78,8 +75,9 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - laravel
+      - shared
 
 networks:
-  laravel:
-    driver: bridge
+  shared:
+    external:
+      name: shared
