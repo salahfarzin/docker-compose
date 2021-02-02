@@ -18,7 +18,7 @@ services:
   php:
     build:
       args:
-        user: salah
+        user: Username
         uid: 1000
       context: .
       dockerfile: ./docker/Dockerfile
@@ -47,7 +47,7 @@ services:
       - ./docker/mysql:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
     environment:
-      MYSQL_ROOT_PASSWORD: huU96Cm_aMa.rt1EIx
+      MYSQL_ROOT_PASSWORD: secret
     networks:
       - shared
       
